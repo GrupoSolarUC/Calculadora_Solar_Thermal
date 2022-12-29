@@ -5,6 +5,7 @@
   b) Seleccionar una ubicación.
   c) En la ventana de opciones que aparecerá, ir a la pestaña "DESCARGAS"
   d) Descargar el archivo que aparece en la opción "Datos Horarios TMY"
+  e) El archivo debe quedar en el mismo directorio que el Script "Simulate_System.py" y que el archivo "Introducir_Parametros.xlsx".
 
 2. Llenar el archivo "Introducir_parametros.xlsx" con los parámetros del sistema y de la simulación (actualmente el archivo tiene parámetros de ejemplo).
 
