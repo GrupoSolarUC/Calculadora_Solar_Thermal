@@ -5,7 +5,7 @@ Created on Wed Sep 28 17:08:53 2022
 @author: Adrian
 """
 
-from scipy.integrate import dblquad
+from scipy.integrate import nquad
 from scipy.interpolate import interp1d
 from math import pi
 from numpy import arctan, tan, sin, cos, log, exp
@@ -13,7 +13,12 @@ import numpy as np
 import sys
 
 
-
+def dblquad(func, a, b, gfun, hfun, args=()):
+    def temp_ranges(*args):
+        return [gfun(args[0]) if callable(gfun) else gfun,
+                hfun(args[0]) if callable(hfun) else hfun]
+    return nquad(func, [temp_ranges, [a, b]], args=args,
+                 opts={"epsabs": 1e-3, "limit": 200, "epsrel": 1e-3})[0]
 
 def diffuse_iam(coll_type, IAM_dict, beta):
     if coll_type == 'Biaxial':
@@ -57,20 +62,20 @@ def diffuse_iam(coll_type, IAM_dict, beta):
         if mode == 'denominator':
             return cos(theta)*sin(theta)
     if beta == 0 or beta == 90:
-        numerator = dblquad(function_to_integrate, 0, pi/2, 0, pi/2, args = ('numerator',))[0]
-        denominator = dblquad(function_to_integrate, 0, pi/2, 0, pi/2, args = ('denominator',))[0]
+        numerator = dblquad(function_to_integrate, 0, pi/2, 0, pi/2, args = ('numerator',))
+        denominator = dblquad(function_to_integrate, 0, pi/2, 0, pi/2, args = ('denominator',))
         return {'sky': numerator/denominator, 'ground': (beta == 90)*numerator/denominator}
     if beta < 0 or beta > 90:
         print('La inclinación de los colectores debe estar en el rango [0° , 90°]')
         sys.exit()
     def integration_limit(phi):
         return arctan(tan(pi/2 - beta*pi/180)/cos(phi))
-    numerator_sky_1 = dblquad(function_to_integrate, 0, pi/2, 0, pi/2, args = ('numerator',))[0]
-    denominator_sky_1 = dblquad(function_to_integrate, 0, pi/2, 0, pi/2, args = ('denominator',))[0]
-    numerator_sky_2 = dblquad(function_to_integrate, 0, pi/2, 0, integration_limit, args = ('numerator',))[0]
-    denominator_sky_2 = dblquad(function_to_integrate, 0, pi/2, 0, integration_limit, args = ('denominator',))[0]
-    numerator_ground = dblquad(function_to_integrate, 0, pi/2, integration_limit, pi/2, args = ('numerator',))[0]
-    denominator_ground = dblquad(function_to_integrate, 0, pi/2, integration_limit, pi/2, args = ('denominator',))[0]
+    numerator_sky_1 = dblquad(function_to_integrate, 0, pi/2, 0, pi/2, args = ('numerator',))
+    denominator_sky_1 = dblquad(function_to_integrate, 0, pi/2, 0, pi/2, args = ('denominator',))
+    numerator_sky_2 = dblquad(function_to_integrate, 0, pi/2, 0, integration_limit, args = ('numerator',))
+    denominator_sky_2 = dblquad(function_to_integrate, 0, pi/2, 0, integration_limit, args = ('denominator',))
+    numerator_ground = dblquad(function_to_integrate, 0, pi/2, integration_limit, pi/2, args = ('numerator',))
+    denominator_ground = dblquad(function_to_integrate, 0, pi/2, integration_limit, pi/2, args = ('denominator',))
     return {'sky': (numerator_sky_1 + numerator_sky_2)/(denominator_sky_1 + denominator_sky_2),
             'ground': numerator_ground/denominator_ground}
         
