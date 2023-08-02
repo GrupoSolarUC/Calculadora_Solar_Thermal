@@ -2,11 +2,12 @@
 """
 Created on Wed Dec  7 15:30:01 2022
 
-@author: adria
+@author: Adrian Riebel
 """
 
 import os
 import tkinter
+from tkinter import messagebox
 import openpyxl
 import csv
 import sys
@@ -39,12 +40,68 @@ def raise_error(error_message):
     window=tkinter.Tk()
     window.attributes('-topmost',1)
     window.withdraw()
-    tkinter.messagebox.showerror('Error',error_message)
+    messagebox.showerror('Error',error_message)
     window.deiconify()
     window.attributes("-topmost", True)
     window.destroy()
     window.quit()
-
+    
+def month_from_day(day):
+    if day >= 1 and day <= 31:
+        return 'January'
+    elif day >= 32 and day <= 59:
+        return 'February'
+    elif day >= 60 and day <= 90:
+        return 'March'
+    elif day >= 91 and day <= 120:
+        return 'April'
+    elif day >= 121 and day <= 151:
+        return 'May'
+    elif day >= 152 and day <= 181:
+        return 'June'
+    elif day >= 182 and day <= 212:
+        return 'July'
+    elif day >= 213 and day <= 243:
+        return 'August'
+    elif day >= 244 and day <= 273:
+        return 'September'
+    elif day >= 274 and day <= 304:
+        return 'October'
+    elif day >= 305 and day <= 334:
+        return 'November'
+    elif day >= 335 and day <= 365:
+        return 'December'
+    else:
+        raise ValueError('Día fuera de rango')
+    
+def date_spanish(day):
+    month_beginnings = {'January': 1,
+                        'February': 32,
+                        'March': 60,
+                        'April': 91,
+                        'May': 121,
+                        'June': 152,
+                        'July': 182,
+                        'August': 213,
+                        'September': 244,
+                        'October': 274,
+                        'November': 305,
+                        'December': 335 }
+    months_spanish = {'January': 'enero',
+                      'February': 'febrero',
+                      'March': 'marzo',
+                      'April': 'abril',
+                      'May': 'mayo',
+                      'June': 'junio',
+                      'July': 'julio',
+                      'August': 'agosto',
+                      'September': 'septiembre',
+                      'October': 'octubre',
+                      'November': 'noviembre',
+                      'December': 'diciembre'}
+    month = month_from_day(day)
+    month_day = day - month_beginnings[month] + 1
+    return str(month_day) + ' de ' + months_spanish[month]
 
     
 def Heat_Map(Curve, title, filename):
@@ -87,6 +144,136 @@ def Heat_Map(Curve, title, filename):
     ax.set_xlabel('Día del año', fontsize = 14)
     ax.set_title(title, fontsize = 16, loc = 'left')
     plt.savefig(filename+'.jpg', bbox_inches='tight')
+    
+def plot_4_days(Curve, title, ylabel, filename):
+    if len(Curve)%8760 != 0:
+        print('Número de elementos en el vector de resultados no es válido')
+        return
+    time_steps_per_hour = int(len(Curve)/8760)
+    plt.ioff()
+    plt.rc('xtick', labelsize=14)
+    plt.rc('ytick', labelsize=14)
+    figure, axis = plt.subplots(2, 2, figsize = (13,8), dpi = 300)
+    figure.suptitle(title, fontsize = 16)
+    plt.tight_layout(pad = 2, h_pad = 3, w_pad = 1)
+    time = np.linspace(0, 24, 24*time_steps_per_hour + 1)
+    
+    days = list(range(80 - 15, 80 + 16))
+    means = []
+    for day in days:
+        means.append(np.mean(Curve[(day - 1)*24*time_steps_per_hour:day*24*time_steps_per_hour + 1]))
+    total_mean = np.mean(means)
+    min_index = np.argmin( [ abs(means[i] - total_mean) for i in range(len(means)) ] )
+    day_to_plot = days[min_index]
+    axis[0, 0].plot(time, Curve[(day_to_plot - 1)*24*time_steps_per_hour:day_to_plot*24*time_steps_per_hour + 1])
+    axis[0, 0].set_title(date_spanish(day_to_plot), fontsize = 14)
+    axis[0, 0].set_ylabel(ylabel, fontsize = 12)
+    axis[0, 0].set_xlim([0,24])
+    axis[0, 0].set_xticks(ticks = [0,4,8,12,16,20,24], labels = ['0:00', '4:00', '8:00', '12:00', '16:00', '20:00', '24:00'])
+    
+    days = list(range(172 - 15, 172 + 16))
+    means = []
+    for day in days:
+        means.append(np.mean(Curve[(day - 1)*24*time_steps_per_hour:day*24*time_steps_per_hour + 1]))
+    total_mean = np.mean(means)
+    min_index = np.argmin( [ abs(means[i] - total_mean) for i in range(len(means)) ] )
+    day_to_plot = days[min_index]
+    axis[0, 1].plot(time, Curve[((day_to_plot - 1)*24 + 1)*time_steps_per_hour:(day_to_plot*24 + 1)*time_steps_per_hour + 1])
+    axis[0, 1].set_title(date_spanish(day_to_plot), fontsize = 14)
+    axis[0, 1].set_ylabel(ylabel, fontsize = 12)
+    axis[0, 1].set_xlim([0,24])
+    axis[0, 1].set_xticks(ticks = [0,4,8,12,16,20,24], labels = ['0:00', '4:00', '8:00', '12:00', '16:00', '20:00', '24:00'])
+
+    days = list(range(264 - 15, 264 + 16))
+    means = []
+    for day in days:
+        means.append(np.mean(Curve[(day - 1)*24*time_steps_per_hour:day*24*time_steps_per_hour + 1]))
+    total_mean = np.mean(means)
+    min_index = np.argmin( [ abs(means[i] - total_mean) for i in range(len(means)) ] )
+    day_to_plot = days[min_index]
+    axis[1, 0].plot(time, Curve[(day_to_plot - 1)*24*time_steps_per_hour:day_to_plot*24*time_steps_per_hour + 1])
+    axis[1, 0].set_title(date_spanish(day_to_plot), fontsize = 14)
+    axis[1, 0].set_ylabel(ylabel, fontsize = 12)
+    axis[1, 0].set_xlim([0,24])
+    axis[1, 0].set_xticks(ticks = [0,4,8,12,16,20,24], labels = ['0:00', '4:00', '8:00', '12:00', '16:00', '20:00', '24:00'])
+    
+    days = list(range(355 - 15, 355 + 11)) + [1,2,3,4,5]
+    means = []
+    for day in days:
+        means.append(np.mean(Curve[(day - 1)*24*time_steps_per_hour:day*24*time_steps_per_hour + 1]))
+    total_mean = np.mean(means)
+    min_index = np.argmin( [ abs(means[i] - total_mean) for i in range(len(means)) ] )
+    day_to_plot = days[min_index]
+    axis[1, 1].plot(time, Curve[(day_to_plot - 1)*24*time_steps_per_hour:day_to_plot*24*time_steps_per_hour + 1])
+    axis[1, 1].set_title(date_spanish(day_to_plot), fontsize = 14)
+    axis[1, 1].set_ylabel(ylabel, fontsize = 12)
+    axis[1, 1].set_xlim([0,24])
+    axis[1, 1].set_xticks(ticks = [0,4,8,12,16,20,24], labels = ['0:00', '4:00', '8:00', '12:00', '16:00', '20:00', '24:00'])
+    
+    if filename[len(filename) - 4:] != '.jpg':
+        filename = filename + '.jpg'
+    plt.savefig(filename, bbox_inches='tight')
+    plt.close()
+
+def Heat_Map(Curve, title, filename):
+    '''
+    Función para generar un "mapa" de alguna variable (con las horas del día en el eje vertical y los días del año en el eje horizontal)
+
+    Parámetros:
+        - Curve : Lista de datos de la variable a plotear. Debe ser de un largo divisible en 365, de forma que para cada día del año haya la misma cantidad de datos.
+        - title : Título de la figura
+        - filename : Nombre del archivo (imagen) con el que se guardará el plot.
+
+    Retorna:
+        - None
+    '''
+    if len(Curve)%365 != 0:
+        print('Número de elementos en el vector de resultados no es válido')
+        return
+    time_steps_per_day = int( len( Curve )/365 )
+    plt.ioff()
+    plt.rc('xtick', labelsize=14)
+    plt.rc('ytick', labelsize=14)
+    yticks = [ 0, int(time_steps_per_day/6), int(time_steps_per_day/3),
+               int(time_steps_per_day/2), int(time_steps_per_day*2/3),
+               int(time_steps_per_day*5/6), time_steps_per_day]
+    ylabels = [0,4,8,12,16,20,24]
+    matrix = np.reshape(Curve, ( 365, time_steps_per_day ) )
+    matrix = np.transpose(matrix)
+    fig = plt.figure(figsize = (8,12), dpi = 300)
+    ax = plt.gca()
+    cmap = plt.cm.get_cmap("jet").copy()
+    cmap.set_bad('white',1.)
+    im = ax.matshow(matrix, cmap = cmap, origin = 'lower')
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.2)
+    plt.colorbar(im, cax=cax)
+    ax.set_yticks(yticks, ylabels)
+    ax.xaxis.set_ticks_position('bottom')
+    ax.xaxis.set_label_position('bottom')
+    ax.set_ylabel('Hora del día (UTC-3)', fontsize = 14)
+    ax.set_xlabel('Día del año', fontsize = 14)
+    ax.set_title(title, fontsize = 16, loc = 'left')
+    if filename[len(filename) - 4:] != '.jpg':
+        filename = filename + '.jpg'
+    plt.savefig(filename, bbox_inches='tight')
+    plt.close()
+    
+    
+def Energy_share(filename, Boiler_Heights, Solar_Heights):
+    plt.ioff()
+    plt.rc('xtick', labelsize=10)
+    plt.rc('ytick', labelsize=14)
+    fig = plt.figure(figsize = (13,8), dpi = 300)
+    plt.bar(range(1,13), Boiler_Heights, tick_label = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'], color = 'dodgerblue', label = 'Auxiliar')
+    plt.bar(range(1,13), Solar_Heights, bottom = Boiler_Heights, color = 'gold', label = 'Solar')
+    plt.title('Distribución de energía mensual', fontsize = 18)
+    plt.ylabel('Energía (kWh)', fontsize = 14)
+    plt.legend(framealpha = 0.7, loc = 'lower right')
+    if filename[len(filename) - 4:] != '.jpg':
+        filename = filename + '.jpg'
+    plt.savefig(filename, bbox_inches='tight')
+    plt.close()
 
 ## Define parameters file name
 params_file_name = 'Introducir_Parametros.xlsx'
@@ -330,6 +517,10 @@ for demand in demand_points_min:
         raise_error('Datos de flujo demandado (fila 24) deben ser números mayores o iguales a cero (expresando el fujo en kg/s)')
         params_file.close()
         sys.exit()
+if not any([ demand_points_min[i] > 0 for i in range(len(demand_points_min)) ]):
+        raise_error('Al menos uno de los valores de demanda especificados (fila 24) debe ser mayor a cero')
+        params_file.close()
+        sys.exit()
 demand_points = [ 60*demand for demand in demand_points_min ]
 
 ## Setpoint temperature
@@ -357,7 +548,7 @@ tank_flow = solar_field_flow
 HX_eff = 0.8
 tank_nodes = 10
 albedo = 0.3
-solar_field_pressure = 5
+solar_field_pressure = 3
 tank_pressure = 2
 time_step = 0.1
 
@@ -879,6 +1070,27 @@ maximum_solar_frac = np.nanmax(instantaneous_solar_frac)
 minimum_solar_frac = np.nanmin(instantaneous_solar_frac)
 instantaneous_solar_frac_masked = np.ma.array(instantaneous_solar_frac, mask = np.isnan(instantaneous_solar_frac))
 
+monthly_days = {1: 31,
+                2: 28,
+                3: 31,
+                4: 30,
+                5: 31,
+                6: 30,
+                7: 31,
+                8: 31,
+                9: 30,
+                10: 31,
+                11: 30,
+                12: 31}
+time_steps_per_day = int(len(Power_needed)/365)
+Boiler_Heights = []
+Solar_Heights = []
+for mes in range(1,13):
+    inicio = time_steps_per_day*sum([ monthly_days[i] for i in range(1,mes) ])
+    fin = inicio + time_steps_per_day*monthly_days[mes]
+    Boiler_Heights.append( sum([ Power_needed[i] - Preheat_Power[i] for i in range(inicio, fin) ])*time_step/1000 )
+    Solar_Heights.append( sum([ Preheat_Power[i] for i in range(inicio, fin) ])*time_step/1000 )
+    
 ## Compute time during which the temperature of the flow leaving the tank surpassed the desired temperature.
 
 excess_temp_counter = 0
@@ -900,6 +1112,10 @@ if excess_temp_counter > 0:
 Heat_Map(Result['demanded_flow_temp'], 'Temperatura del agua saliendo del tanque [°C]', 'T_out_Tank')
 Heat_Map(instantaneous_solar_frac_masked, 'Fracción solar', 'Solar_Fraction')
 Heat_Map(Q_useful, 'Calor útil aportado por campo solar [W]', 'Q_useful')
+
+
+plot_4_days(Result['demanded_flow_temp'], 'Temperatura en 4 días representativos de cada época', 'Temp. [°C]', 'Perfiles_temperatura')
+Energy_share('Aportes_Energeticos_Mensuales', Boiler_Heights, Solar_Heights)
 
 ## Compute the amount of heat that was "wasted" due to vapor production.
 
