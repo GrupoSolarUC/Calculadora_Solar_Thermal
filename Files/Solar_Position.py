@@ -2,7 +2,7 @@
 """
 Created on Mon Dec 12 23:31:26 2022
 
-@author: adria
+@author: Adrian Riebel
 """
 
 from scipy.interpolate import interp1d
